@@ -14,18 +14,22 @@ class Parser:
         val source = fromFile(path);
         try {
             var line = 1;
-            for string <- source.getLines() do {
-                val row = string.split(' ').toList
-
-                for i <- row do {
-                    wordBuffer += ParsedString(i, line, i.length, path)
+            var buffer = String();
+            for wrd <- source.getLines() do {
+                for (i <- 0 until wrd.length) do {
+                    if i+1 < wrd.length then
+                        if wrd.charAt(i) == '/' && wrd.charAt(i+1) == '/' then
+                            println(s"[$line:$i:\"Unknown\"] Comment")
                 }
+
+                //wordBuffer += ParsedString(i, line, i.length, path)
+
 
                 line += 1
             }
-            wordBuffer.foreach(x => x.print())
+            //wordBuffer.foreach(x => x.print())
         } catch {
-            case _: Throwable => println("File Error Occurred!")
+            case x: Throwable => println(s"File Error Occurred! '$x'")
         } finally {
             source.close()
         }
