@@ -21,8 +21,11 @@ class Parser:
                 breakable {
                     for chr <- i.toCharArray do
                         print(s"chr: '$chr', ")
+                        buffer += chr
+                        lastChar = chr
                 }
-                println(' ');
+                println(s" ");
+                line += 1
 
 
         } catch {
