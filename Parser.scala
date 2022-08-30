@@ -24,7 +24,9 @@ class Parser:
                         buffer += chr
                         lastChar = chr
                 }
-                println(s" ");
+                println()
+                wordBuffer += ParsedString(buffer, line)
+                buffer = ""
                 line += 1
 
 
