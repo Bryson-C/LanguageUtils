@@ -9,29 +9,31 @@ class ParsedString(val string: String, val line: Int = -1, val column: Int = -1,
 
 class Parser:
     private var wordBuffer = ListBuffer[ParsedString]()
+    def getWordBuffer: ListBuffer[ParsedString] = return wordBuffer
 
     def parse(path: String): Unit = {
         val source = fromFile(path);
         try {
-            var line = 1;
-            var buffer = String();
-            for wrd <- source.getLines() do {
-                for (i <- 0 until wrd.length) do {
-                    if i+1 < wrd.length then
-                        if wrd.charAt(i) == '/' && wrd.charAt(i+1) == '/' then
-                            println(s"[$line:$i:\"Unknown\"] Comment")
+            var buffer = String()
+            var lastChar: Char = ' '
+            var line = 0
+            for i <- source.getLines() do
+                breakable {
+                    for chr <- i.toCharArray do
+                        print(s"chr: '$chr', ")
                 }
+                println(' ');
 
-                //wordBuffer += ParsedString(i, line, i.length, path)
 
-
-                line += 1
-            }
-            //wordBuffer.foreach(x => x.print())
         } catch {
             case x: Throwable => println(s"File Error Occurred! '$x'")
         } finally {
             source.close()
         }
+
+        wordBuffer.foreach(x => x.print())
+
     }
+
+
 
