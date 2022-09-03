@@ -7,37 +7,81 @@ import util.control.Breaks.*
 
 
 class ParsedString(val string: String, val line: Int = -1, val column: Int = -1, val file: String = "Unknown"):
-    def print(): Unit = println(s"[$file:$line:$column] '$string'")
-    def errorString(): String = return s"[$file:$line:$column] '$string'"
+    def errorString(): String = s"[$file:$line:$column] '$string'"
+    def print(): Unit = println(errorString())
+    def errorStringLoc(): String = s"[$line:$column] '$string'"
+    def printLoc(): Unit = println(errorStringLoc())
+
+
+class ParserSettings(val path: String, val recordNewLines: Boolean = false, val log: Boolean = true, val logWithPath: Boolean = false):
+    def this(path: String) = this(path, false, true, false)
 
 class Parser:
     private var wordBuffer = ListBuffer[ParsedString]()
+    def getWordBuffer: ListBuffer[ParsedString] = wordBuffer
+
     private def pushBufferIfNotEmpty(buffer: String, line: Int = -1, column: Int = -1, file: String = "Unknown"): String = {
         if buffer.nonEmpty then
             wordBuffer += ParsedString(buffer, line, column, file)
-            return ""
+            ""
         else
-            return buffer
+            buffer
     }
 
-    def getWordBuffer: ListBuffer[ParsedString] = return wordBuffer
 
-    def parse(path: String, recordNewLines: Boolean = false): Unit = {
-        val source = fromFile(path);
+    def parse(parserSettings: ParserSettings): Unit = {
+        val path = parserSettings.path
+        val source = fromFile(path)
         try {
             for line <- source.getLines().zipWithIndex do
                 var index = 0
                 var buffer = String()
-                while index < line._1.length do
-                    val current = line._1.charAt(index)
-                    val nextChar: Option[Char] = if index < line._1.length-1 then Some(line._1.charAt(index+1)) else None
-                    var lastChar: Option[Char] = if index > 0 then Some(line._1.charAt(index-1)) else None
+                    while index < line._1.length do
+                        breakable {
+                            val current = line._1.charAt(index)
+                            val nextChar: Option[Char] = if index < line._1.length - 1 then Some(line._1.charAt(index + 1)) else None
+                            var lastChar: Option[Char] = if index > 0 then Some(line._1.charAt(index - 1)) else None
+
+                            println(s"Buffer: $buffer")
+
+                            if current == '\"' || current == '\'' then
+                                val stringEnd = if current == '\"' then '\"' else '\''
+                                buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+                                while line._1.charAt(index) != stringEnd do
+                                    buffer += line._1.charAt(index)
+                                    index += 1
+                                buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+                                index += 1
+                                break
+
+                                if current.isWhitespace then
+                                    buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+                                index += 1
+                                break
+
+                            else if current.isSpaceChar && parserSettings.recordNewLines then
+                                buffer += '\n'
+                                index += 1
+                                break
+
+                            else if current.isDigit then
+                                buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+                                while line._1.charAt(index).isDigit do
+                                    buffer += line._1.charAt(index)
+                                    index += 1
+                                buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+                                index += 1
+                                break
 
 
-                    buffer += current
 
-                    index += 1
-                wordBuffer += ParsedString(buffer, line._2, 0, path)
+                            buffer += current
+
+                            index += 1
+                        }
+                    buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+            wordBuffer.foreach(x => if parserSettings.logWithPath then x.print() else x.printLoc())
+
             /*
             for i <- source.getLines() do
                 var index = 0
@@ -144,8 +188,6 @@ class Parser:
         } finally {
             source.close()
         }
-
-        wordBuffer.foreach(x => x.print())
 
     }
 
