@@ -1,10 +1,39 @@
 package com.bc.helloworld
 
-import java.nio.file.{FileSystemException, Paths, Files}
+
+import java.nio.file.{FileSystemException, Files, Paths}
 import scala.collection.mutable.ListBuffer
 import scala.io.Source.fromFile
 import util.control.Breaks.*
 
+object FileUtility:
+    def openFile(path: String): scala.io.Source = fromFile(path)
+    def readFile(path: String): String = {
+        val source = fromFile(path)
+        var buffer = String()
+        try {
+            val lines = for i <- source.getLines() yield i
+            buffer = lines.toString()
+        } catch {
+            case err: Throwable => println(s"Error: $err")
+        } finally {
+            source.close()
+        }
+        buffer
+    }
+    def readFileAsLines(path: String): ListBuffer[String] = {
+        val source = fromFile(path)
+        var buffer = ListBuffer[String]()
+        try {
+            val lines = for i <- source.getLines() yield i
+            lines.foreach(x => buffer += x)
+        } catch {
+            case err: Throwable => println(s"Error: $err")
+        } finally {
+            source.close()
+        }
+        buffer
+    }
 
 class ParsedString(val string: String, val line: Int = -1, val column: Int = -1, val file: String = "Unknown"):
     def errorString(): String = s"[$file:$line:$column] '$string'"
@@ -31,165 +60,63 @@ class Parser:
 
     def parse(parserSettings: ParserSettings): Unit = {
         val path = parserSettings.path
-        val source = fromFile(path)
-        try {
-            for line <- source.getLines().zipWithIndex do
-                var index = 0
-                var buffer = String()
-                    while index < line._1.length do
-                        breakable {
-                            val current = line._1.charAt(index)
-                            val nextChar: Option[Char] = if index < line._1.length - 1 then Some(line._1.charAt(index + 1)) else None
-                            var lastChar: Option[Char] = if index > 0 then Some(line._1.charAt(index - 1)) else None
+        val content = FileUtility.readFileAsLines(path)
 
-                            println(s"Buffer: $buffer")
+        for line <- content.zipWithIndex do
+            var index = 0
+            var buffer = String()
+                while index < line._1.length do
+                    breakable {
+                        val current = line._1.charAt(index)
+                        val nextChar: Option[Char] = if index < line._1.length - 1 then Some(line._1.charAt(index + 1)) else None
+                        var lastChar: Option[Char] = if index > 0 then Some(line._1.charAt(index - 1)) else None
 
-                            if current == '\"' || current == '\'' then
-                                val stringEnd = if current == '\"' then '\"' else '\''
-                                buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
-                                while line._1.charAt(index) != stringEnd do
-                                    buffer += line._1.charAt(index)
-                                    index += 1
-                                buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
-                                index += 1
-                                break
-
-                                if current.isWhitespace then
-                                    buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
-                                index += 1
-                                break
-
-                            else if current.isSpaceChar && parserSettings.recordNewLines then
-                                buffer += '\n'
-                                index += 1
-                                break
-
-                            else if current.isDigit then
-                                buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
-                                while line._1.charAt(index).isDigit do
-                                    buffer += line._1.charAt(index)
-                                    index += 1
-                                buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
-                                index += 1
-                                break
-
-
-
-                            buffer += current
-
+                        if current == '\"' || current == '\'' then
+                            val stringEnd = if current == '\"' then '\"' else '\''
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
                             index += 1
-                        }
-                    buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
-            wordBuffer.foreach(x => if parserSettings.logWithPath then x.print() else x.printLoc())
-
-            /*
-            for i <- source.getLines() do
-                var index = 0
-                breakable {
-                    for chr <- i.toCharArray do
-                        if index > i.length then
+                            while line._1.charAt(index) != stringEnd do
+                                buffer += line._1.charAt(index)
+                                index += 1
+                            buffer = s"\"$buffer\""
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length+2, path)
+                            index += 1
                             break
 
-                        // Check If Next Character Is Valid
-                        val nextChar: Option[Char] =
-                            if index < i.length-1 then
-                                Some(i.charAt(index + 1))
-                            else
-                                None
-
-
-
-                        // Check For Strings
-                        if chr == '\"' || chr == '\'' then
-                            buffer = pushBufferIfNotEmpty(buffer, line, index-buffer.length, path)
+                        if current.isWhitespace || current == ' ' then
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
                             index += 1
+                            break
 
-                            val endChar = if chr == '\"' then '\"' else '\''
+                        else if current.isSpaceChar && parserSettings.recordNewLines then
+                            buffer += '\n'
+                            index += 1
+                            break
 
-                            while i.charAt(index) != endChar do
-                                buffer += i.charAt(index)
+                        else if current.isDigit then
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+                            while line._1.charAt(index).isDigit do
+                                buffer += line._1.charAt(index)
                                 index += 1
-
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
                             index += 1
+                            break
 
-                            println(s"String '$buffer'")
-                            buffer = s"$endChar$buffer$endChar"
-                            wordBuffer += ParsedString(buffer, line, index-buffer.length, path)
-                            buffer = ""
-
-                        // Check If A Number
-                        else if chr.isDigit then
-                            buffer = pushBufferIfNotEmpty(buffer, line, index-buffer.length, path)
-                            while i.charAt(index).isDigit do
-                                buffer += i.charAt(index)
-                                index += 1
-
-
-
+                        else if !current.isSpaceChar && !current.isLetterOrDigit then
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index, path)
+                            buffer += current
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index, path)
                             index += 1
-                            wordBuffer += ParsedString(buffer, line, index-buffer.length, path)
-                            buffer = ""
-
-                        // Split On Spaces
-                        else if chr.isSpaceChar then
-                            if chr.isWhitespace then
-                                wordBuffer += ParsedString(buffer, line, index-buffer.length, path)
-                                buffer = ""
-                            else
-                                wordBuffer += ParsedString(chr.toString, line, index, path)
+                            break
 
 
-                        else if chr == '\n' || chr == '\t' && recordNewLines then
-                            wordBuffer += ParsedString(chr.toString, line, index, path)
+                        buffer += current
 
-
-                        // Check For Special Character/Operators
-                        else if !chr.isSpaceChar && !chr.isLetterOrDigit then
-                            buffer = pushBufferIfNotEmpty(buffer, line, index-buffer.length, path)
-                            wordBuffer += ParsedString(chr.toString, line, index, path)
-                       /*     println(s"Chr: $chr | Next Chr: ${nextChar.get}")
-
-                            buffer = if nextChar.nonEmpty && !nextChar.get.isSpaceChar then s"$chr${nextChar.get}" else chr.toString
-                            if buffer == "//" then
-                                buffer = ""
-                                while index < i.length do
-                                    print(i.charAt(index))
-                                    index += 1
-                                break
-
-                            println(s"Buffer: $chr")
-                            wordBuffer += ParsedString(buffer, line, index, path)
-                        */
-
-
-                        // Check If Line Ends
-                        else if index == i.toCharArray.length then
-                            wordBuffer += ParsedString(buffer, line, index-buffer.length, path)
-                            // Put New Line If Setting
-                            if recordNewLines then
-                                wordBuffer += ParsedString("\n", line, i.length-1, path)
-                            buffer = ""
-
-
-                        if index < i.length && i.charAt(index) != ' ' then
-                            buffer += i.charAt(index)
-                        lastChar = chr
                         index += 1
-
-                    buffer = pushBufferIfNotEmpty(buffer, line, index-buffer.length, path)
-                }
-                println()
-                line += 1
-            */
-        } catch {
-            case strErr: StringIndexOutOfBoundsException => println(s"String Index Error! '$strErr'")
-            case fileErr: FileSystemException => println(s"File Error Occurred! '$fileErr'")
-            case err: Throwable => println(s"Error Occurred! '$err'")
-        } finally {
-            source.close()
-        }
+                    }
+                buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+        wordBuffer.foreach(x => if parserSettings.logWithPath then x.print() else x.printLoc())
 
     }
-
 
 
