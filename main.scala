@@ -1,20 +1,16 @@
-package com.bc.helloworld
+package com.bc.LanguageUtility
 
+import com.bc.LanguageUtility._
 
-import com.bc.helloworld.Parser
-
-
-extension (p: Parser)
-    def ver(): Unit = println("Version 0.0.0");
 
 
 @main def main(): Unit = {
 
-
+    val settings = ParserSettings("D:\\Scala\\src\\main\\data.txt")
     val parser = Parser();
-    parser.parse("D:\\Scala\\src\\main\\data.txt")
-    parser.ver()
+    parser.parse(settings)
 
-
+    val tokenizer = Tokenizer()
+    tokenizer.tokenize(parser.getWordBuffer)
 
 }

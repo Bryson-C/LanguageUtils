@@ -1,10 +1,10 @@
-package com.bc.helloworld
+package com.bc.LanguageUtility
 
 
 import java.nio.file.{FileSystemException, Files, Paths}
 import scala.collection.mutable.ListBuffer
 import scala.io.Source.fromFile
-import util.control.Breaks.*
+import scala.util.control.Breaks.*
 
 object FileUtility:
     def openFile(path: String): scala.io.Source = fromFile(path)
@@ -104,7 +104,11 @@ class Parser:
 
                         else if !current.isSpaceChar && !current.isLetterOrDigit then
                             buffer = pushBufferIfNotEmpty(buffer, line._2, index, path)
-                            buffer += current
+                            if nextChar.nonEmpty && current == nextChar.get then
+                                buffer = s"$current$current"
+                                index += 1
+                            else
+                                buffer += current
                             buffer = pushBufferIfNotEmpty(buffer, line._2, index, path)
                             index += 1
                             break
