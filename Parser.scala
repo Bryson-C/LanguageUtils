@@ -46,7 +46,7 @@ class ParserSettings(val path: String, val recordNewLines: Boolean = false, val 
     def this(path: String) = this(path, false, true, false)
 
 class Parser:
-    private var wordBuffer = ListBuffer[ParsedString]()
+    private val wordBuffer = ListBuffer[ParsedString]()
     def getWordBuffer: ListBuffer[ParsedString] = wordBuffer
 
     private def pushBufferIfNotEmpty(buffer: String, line: Int = -1, column: Int = -1, file: String = "Unknown"): String = {

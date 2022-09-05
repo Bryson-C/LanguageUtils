@@ -7,3 +7,8 @@ object StringUtility:
                 return false
         true
     }
+    def pascalCase(str: String): String = {
+        var result = String()
+        str.split(' ').foreach(x => {result += x.capitalize + " "})
+        result
+    }
