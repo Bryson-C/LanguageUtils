@@ -1,6 +1,0 @@
-hello world
-// yo gamers
-int main=10;
-int main=10;
-"Stringy String"
-'Stringy String 2'
