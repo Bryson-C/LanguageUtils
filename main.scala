@@ -12,7 +12,7 @@ import com.bc.LanguageUtility._
     println(greeting)
 
 
-    val settings = ParserSettings("D:\\Scala\\src\\main\\data.txt")
+    val settings = ParserSettings("D:\\Scala\\src\\main\\data.lang")
     val parser = Parser();
     parser.parse(settings)
 

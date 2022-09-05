@@ -105,8 +105,13 @@ class Parser:
                         else if !current.isSpaceChar && !current.isLetterOrDigit then
                             buffer = pushBufferIfNotEmpty(buffer, line._2, index, path)
                             if nextChar.nonEmpty && current == nextChar.get then
-                                buffer = s"$current$current"
-                                index += 1
+                                if current == '/' then
+                                    while index < line._1.length do
+                                        index += 1
+                                    index += 1
+                                else
+                                    buffer = s"$current$current"
+                                    index += 1
                             else
                                 buffer += current
                             buffer = pushBufferIfNotEmpty(buffer, line._2, index, path)

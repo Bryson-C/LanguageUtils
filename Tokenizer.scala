@@ -54,7 +54,7 @@ class Tokenizer:
             lastToken match
                 case Token.ID.Int_Type => {
                     isCustomName = true
-                    tokenBuffer += stringToToken(word.string)
+                    tokenBuffer += Token(Token.ID.NamedString, word.string)
                     lastToken = Token.ID.NamedString;
                 }
                 case _ => isCustomName = false
@@ -63,13 +63,14 @@ class Tokenizer:
             {
                 if !prove(word.string) then
                     println(s"Unhandled: ${word.string}")
-                    tokenBuffer += stringToToken(word.string)
-                    lastToken = stringToToken(word.string).id
+                    lastToken = Token.ID.None
                 else
                     println(s"${word.string} Is Handled!")
-                    lastToken = Token.ID.None
+                    tokenBuffer += stringToToken(word.string)
+                    lastToken = stringToToken(word.string).id
             }
 
+        println(s"Token Buffer: Size: ${tokenBuffer.size}")
         tokenBuffer.foreach(x => println(s"'${x.string}' as ${x.id}"))
 
     }
