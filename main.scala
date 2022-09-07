@@ -1,20 +1,16 @@
 package com.bc.LanguageUtility
 
+// TODO: Add Documentation For LanguageUtility Package
 import com.bc.LanguageUtility._
 
 
 
 @main def main(): Unit = {
 
-    var greeting = "Hello world, this is a parser. im figuring out language features!"
-    println(greeting)
-    greeting = StringUtility.pascalCase(greeting)
-    println(greeting)
-
-
-    val settings = ParserSettings("D:\\Scala\\src\\main\\data.lang")
+    val settings = ParserSettings("D:\\Scala\\src\\main\\data.lang", true)
     val parser = Parser();
     parser.parse(settings)
+    parser.getWordBuffer.foreach(x => x.print())
 
     val tokenizer = Tokenizer()
     tokenizer.tokenize(parser.getWordBuffer)

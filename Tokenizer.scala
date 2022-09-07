@@ -14,6 +14,13 @@ object Token:
 
 class Token(val id: Token.ID = Token.ID.None, val string: String = "") {}
 
+class TokenExpression(val expr: ListBuffer[Token]):
+    def getBuffer: ListBuffer[Token] = expr
+    def printexpr(): Unit = {
+        for i <- expr do
+            print(s"'${i.string}' as ${i.id}")
+    }
+
 
 class TokenizerSettings {}
 
@@ -71,6 +78,16 @@ class Tokenizer:
             }
 
         println(s"Token Buffer: Size: ${tokenBuffer.size}")
-        tokenBuffer.foreach(x => println(s"'${x.string}' as ${x.id}"))
+        val exprBuffer = ListBuffer[Token]()
+        val exprs = ListBuffer[TokenExpression]()
+
+        tokenBuffer.foreach(x => if x.id == Token.ID.SemiColon then
+                                    exprBuffer += x;
+                                    exprs += TokenExpression(exprBuffer);
+                                    exprBuffer.clear()
+                                else
+                                    exprBuffer += x)
+
+        exprs.foreach(x => x.printexpr())
 
     }

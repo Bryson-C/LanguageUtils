@@ -4,6 +4,7 @@ package com.bc.LanguageUtility
 import java.nio.file.{FileSystemException, Files, Paths}
 import scala.collection.mutable.ListBuffer
 import scala.io.Source.fromFile
+import scala.util.control.Breaks
 import scala.util.control.Breaks.*
 
 object FileUtility:
@@ -43,7 +44,7 @@ class ParsedString(val string: String, val line: Int = -1, val column: Int = -1,
 
 
 class ParserSettings(val path: String, val recordNewLines: Boolean = false, val log: Boolean = true, val logWithPath: Boolean = false):
-    def this(path: String) = this(path, false, true, false)
+    ;
 
 class Parser:
     private val wordBuffer = ListBuffer[ParsedString]()
@@ -65,42 +66,50 @@ class Parser:
         for line <- content.zipWithIndex do
             var index = 0
             var buffer = String()
+
+            val continueBreak = Breaks()
+            val lineBreak = Breaks()
+
+            lineBreak.breakable {
                 while index < line._1.length do
-                    breakable {
+                    continueBreak.breakable {
+
+
                         val current = line._1.charAt(index)
                         val nextChar: Option[Char] = if index < line._1.length - 1 then Some(line._1.charAt(index + 1)) else None
-                        var lastChar: Option[Char] = if index > 0 then Some(line._1.charAt(index - 1)) else None
+                        val lastChar: Option[Char] = if index > 0 then Some(line._1.charAt(index - 1)) else None
+
 
                         if current == '\"' || current == '\'' then
                             val stringEnd = if current == '\"' then '\"' else '\''
-                            buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index - buffer.length, path)
                             index += 1
                             while line._1.charAt(index) != stringEnd do
                                 buffer += line._1.charAt(index)
                                 index += 1
                             buffer = s"\"$buffer\""
-                            buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length+2, path)
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index - buffer.length + 2, path)
                             index += 1
-                            break
+                            continueBreak.break
 
                         if current.isWhitespace || current == ' ' then
-                            buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index - buffer.length, path)
                             index += 1
-                            break
+                            continueBreak.break
 
                         else if current.isSpaceChar && parserSettings.recordNewLines then
                             buffer += '\n'
                             index += 1
-                            break
+                            continueBreak.break
 
                         else if current.isDigit then
-                            buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index - buffer.length, path)
                             while line._1.charAt(index).isDigit do
                                 buffer += line._1.charAt(index)
                                 index += 1
-                            buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
-                            index += 1
-                            break
+                            buffer = pushBufferIfNotEmpty(buffer, line._2, index - buffer.length, path)
+                            //index += 1
+                            continueBreak.break
 
                         else if !current.isSpaceChar && !current.isLetterOrDigit then
                             buffer = pushBufferIfNotEmpty(buffer, line._2, index, path)
@@ -116,14 +125,16 @@ class Parser:
                                 buffer += current
                             buffer = pushBufferIfNotEmpty(buffer, line._2, index, path)
                             index += 1
-                            break
+                            continueBreak.break
 
 
                         buffer += current
-
                         index += 1
                     }
-                buffer = pushBufferIfNotEmpty(buffer, line._2, index-buffer.length, path)
+                buffer = pushBufferIfNotEmpty(buffer, line._2, index - buffer.length, path)
+                if parserSettings.recordNewLines then
+                    wordBuffer += ParsedString("\\n", line._2, index, path)
+            }
         wordBuffer.foreach(x => if parserSettings.logWithPath then x.print() else x.printLoc())
 
     }
