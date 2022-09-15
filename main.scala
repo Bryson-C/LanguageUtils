@@ -1,7 +1,9 @@
 package com.bc.LanguageUtility
 
 // TODO: Add Documentation For LanguageUtility Package
-import com.bc.LanguageUtility._
+import com.bc.LanguageUtility.*
+
+import scala.collection.mutable.ListBuffer
 
 
 
@@ -13,6 +15,9 @@ import com.bc.LanguageUtility._
     parser.getWordBuffer.foreach(x => x.print())
 
     val tokenizer = Tokenizer()
-    tokenizer.tokenize(parser.getWordBuffer)
-    
+    val tokenBuffer = tokenizer.tokenize(parser.getWordBuffer)
+    tokenBuffer.foreach(x => x.printID())
+
+
+
 }

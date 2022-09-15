@@ -16,10 +16,10 @@ object Token:
             Equals,
             SemiColon,
             NewLine
-    enum Context:
-        case None, VariableDef, FunctionDef
 
-class Token(val id: Token.ID = Token.ID.None, val string: String = "") {}
+class Token(val id: Token.ID = Token.ID.None, val string: String = ""):
+    def print(): Unit = println(s"'$string'")
+    def printID(): Unit = println(s"'$string' as $id")
 
 class TokenizerSettings {}
 
@@ -38,6 +38,7 @@ class Tokenizer:
 
         result match
             case "Int" => Token(Token.ID.Int_Type, s)
+            case "String" => Token(Token.ID.String_Type, s)
             case "=" => Token(Token.ID.Equals, s)
             case ";" => Token(Token.ID.SemiColon, s)
             case "\n" => Token(Token.ID.NewLine, s)
@@ -47,32 +48,38 @@ class Tokenizer:
     private def tokenToString(t: Token): String = {
         t.id match
             case Token.ID.Int_Type => "Int"
+            case Token.ID.String_Type => "String"
             case Token.ID.Equals => "="
             case Token.ID.SemiColon => ";"
             case Token.ID.NewLine => "\\n"
             case _ => t.string
     }
 
-    def tokenize(wordBuffer: ListBuffer[ParsedString]): Unit = {
+    def tokenize(wordBuffer: ListBuffer[ParsedString]): ListBuffer[Token] = {
         var lastToken = Token.ID.None
         var variableType = Token.ID.None
-        var userString = Breaks();
-        userString.breakable {
-            for word <- wordBuffer do
+        val userString = Breaks();
+        for word <- wordBuffer do
+            userString.breakable {
 
-                if variableType == Token.ID.String_Type then
-                    if StringUtility.stringIsString(word.string) then
-                        tokenBuffer += Token(Token.ID.String, word.string)
+                if word.string == ";" then
+                    variableType = Token.ID.None
+
+                if variableType == Token.ID.String_Type || StringUtility.stringIsString(word.string) then
+                    tokenBuffer += Token(Token.ID.String, word.string)
                     userString.break()
+
 
                 lastToken match
                     case Token.ID.Int_Type =>
                         tokenBuffer += Token(Token.ID.NamedString, word.string)
-                        lastToken = Token.ID.NamedString;
+                        lastToken = Token.ID.NamedString
+                        variableType = Token.ID.Int_Type
                         userString.break()
                     case Token.ID.String_Type =>
                         tokenBuffer += Token(Token.ID.NamedString, word.string)
-                        lastToken = Token.ID.NamedString;
+                        lastToken = Token.ID.NamedString
+                        variableType = Token.ID.String_Type
                         userString.break()
                     case _ => ;
 
@@ -82,5 +89,6 @@ class Tokenizer:
                 else
                     println(s"Unhandled: ${word.string}")
                     lastToken = Token.ID.None
-        }
+            }
+        tokenBuffer
     }
