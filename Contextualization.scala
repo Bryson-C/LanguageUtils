@@ -7,7 +7,15 @@ import scala.collection.mutable.ListBuffer
 import scala.util.control.Breaks._
 
 
-
+class ContextBuffer(val tokens: ListBuffer[Token]):
+    def print_(): Unit = {
+        tokens.foreach(x => print(s"'${x.string}' ") )
+        println()
+    }
+    def printID_(): Unit = {
+        tokens.foreach(x => print(s"'${x.string}' as ${x.id} ") )
+        println()
+    }
 
 class ContextualizationSettings(val newLinesEndStatements: Boolean = false):
     ;
@@ -40,9 +48,16 @@ class Contextualization(val contextualizationSettings: ContextualizationSettings
         index += 1
         (tokenBuffer, index)
     }
+
     // TODO: Implement
-    def contextualizeAll(tokens: List[Token]): ListBuffer[ListBuffer[Token]] = {
-        ListBuffer[ListBuffer[Token]]()
+    def contextualizeAll(tokens: List[Token]): ListBuffer[ContextBuffer] = {
+        val tokenList = ListBuffer[ContextBuffer]()
+        var index = 0
+        while index < tokens.length do
+            val stmt = contextualize(tokens, index)
+            index += stmt._2
+            tokenList += ContextBuffer(stmt._1)
+        tokenList
     }
 
 
