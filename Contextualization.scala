@@ -9,11 +9,11 @@ import scala.util.control.Breaks._
 
 class ContextBuffer(val tokens: ListBuffer[Token]):
     def print_(): Unit = {
-        tokens.foreach(x => print(s"'${x.string}' ") )
+        tokens.foreach(x => print(s"'${x.string}' | ") )
         println()
     }
     def printID_(): Unit = {
-        tokens.foreach(x => print(s"'${x.string}' as ${x.id} ") )
+        tokens.foreach(x => print(s"'${x.string}' as ${x.id} | ") )
         println()
     }
 
@@ -29,10 +29,12 @@ class Contextualization(val contextualizationSettings: ContextualizationSettings
 
 
     def contextualize(tokens: List[Token], startIndex: Int = 0): (ListBuffer[Token], Int) = {
-        val list: List[Token] = if startIndex > 0 then
-                                    for i <- tokens.zipWithIndex if i._2 > startIndex yield i._1
-                                else
-                                    tokens
+        val list: List[Token] =
+            if startIndex > 0 then
+                for i <- tokens.zipWithIndex if i._2 > startIndex yield i._1
+            else
+                tokens
+
         var index = startIndex
         breakable {
             for i <- list.zipWithIndex do
@@ -44,6 +46,10 @@ class Contextualization(val contextualizationSettings: ContextualizationSettings
                     break()
                 else if i._1.id == Token.ID.Int_Type || i._1.id == Token.ID.String_Type then
                     context = Context.VariableDef
+                else if i._1.id == Token.ID.Equals then
+                    // This Is A Variable
+                    ;
+
         }
         index += 1
         (tokenBuffer, index)
