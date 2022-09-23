@@ -1,5 +1,9 @@
 package com.bc.LanguageUtility
 
+import scala.collection.mutable.ListBuffer._
+import scala.reflect._
+
+
 object StringUtility:
     def stringIsDigit(str: String): Boolean = {
         for chr <- str do
